@@ -9,83 +9,90 @@ namespace PokemonReviewApp.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CountryController : Controller
+    public class OwnerController : Controller
     {
+        private readonly IOwner _ownerRepository;
         private readonly ICountry _country;
         private readonly IMapper _mapper;
 
-        public CountryController(ICountry country, IMapper mapper)
+        public OwnerController(IOwner owner,ICountry country, IMapper mapper)
         {
+            _ownerRepository = owner;
             _country = country;
             _mapper = mapper;
         }
 
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Country>))]
-        public IActionResult GetCountries()
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Owner>))]
+        public IActionResult GetOwners()
         {
-            var countries = _mapper.Map<List<CountryDTO>>(_country.GetCountries());
+            var owners = _mapper.Map<List<OwnerDTO>>(_ownerRepository.GetOwners());
 
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            return Ok(countries);
+            return Ok(owners);
         }
 
-        [HttpGet("{countryId}")]
-        [ProducesResponseType(200, Type = typeof(Country))]
+        [HttpGet("{ownerId}")]
+        [ProducesResponseType(200, Type = typeof(Owner))]
         [ProducesResponseType(400)]
-        public IActionResult GetCategoryById(int countryId)
+        public IActionResult GetOwner(int ownerId)
         {
-            if (!_country.CountryExist(countryId))
+            if (!_ownerRepository.OwnerExist(ownerId))
             {
                 return NotFound();
             }
 
-            var country = _mapper.Map<CountryDTO>(_country.GetCountry(countryId));
+            var owner = _mapper.Map<OwnerDTO>(_ownerRepository.GetOwner(ownerId));
 
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            return Ok(country);
+            return Ok(owner);
         }
 
-        [HttpGet("/owners/{ownerId}")]
-        [ProducesResponseType(200, Type = typeof(Country))]
+        [HttpGet("{ownerId}/pokemon")]
+        [ProducesResponseType(200, Type = typeof(Owner))]
         [ProducesResponseType(400)]
-        public IActionResult GetCountryOfAnOwner(int ownerId)
-        {   
-            var country = _mapper.Map<CountryDTO>(_country.GetCountryByOwner(ownerId));
+        public IActionResult GetPokemonByOwner(int ownerId)
+        {
+            if (!_ownerRepository.OwnerExist(ownerId))
+            {
+                return NotFound();
+            }
+            var owner = _mapper.Map<List<PokemonDTO>>(
+                _ownerRepository.GetPokemonsByOwner(ownerId));
 
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            return Ok(country);
-        }
+            return Ok(owner);
 
+        }
 
         [HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public IActionResult CreateCountry([FromBody] CountryDTO countryCreate)
+        public IActionResult CreateOwner([FromQuery] int countryId, [FromBody] OwnerDTO ownerCreate)
         {
-            if (countryCreate == null)
+            if (ownerCreate == null)
             {
                 return BadRequest();
             }
-            var country = _country.GetCountries()
-                .Where(x => x.Name.Trim().ToUpper() == countryCreate.Name.TrimEnd().ToUpper())
+            var owners = _ownerRepository.GetOwners()
+                .Where(x => x.LastName.Trim().ToUpper() == ownerCreate.LastName.TrimEnd().ToUpper())
                 .FirstOrDefault();
 
-            if (country != null)
+            if (owners != null)
             {
-                ModelState.AddModelError("", "Country already exists!");
+                ModelState.AddModelError("", "Owner already exists!");
                 return StatusCode(422, ModelState);
             }
 
@@ -94,9 +101,11 @@ namespace PokemonReviewApp.Controllers
                 return BadRequest(ModelState);
             }
 
-            var countryMap = _mapper.Map<Country>(countryCreate);
+            var ownerMap = _mapper.Map<Owner>(ownerCreate);
 
-            if (!_country.CreateCountry(countryMap))
+            ownerMap.Country = _country.GetCountry(countryId);
+
+            if (!_ownerRepository.CreateOwner(ownerMap))
             {
                 ModelState.AddModelError("", "Something went wrong while savin");
                 return StatusCode(500, ModelState);
@@ -105,21 +114,21 @@ namespace PokemonReviewApp.Controllers
             return Ok("Succesfully created");
         }
 
-        [HttpPut("{countryId}")]
+        [HttpPut("{ownerId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public IActionResult UpdateCountry(int countryId, [FromBody] CountryDTO countryUpdate)
+        public IActionResult UpdateOwner(int ownerId, [FromBody] OwnerDTO ownerUpdate)
         {
-            if (countryUpdate == null)
+            if (ownerUpdate == null)
             {
                 return BadRequest(ModelState);
             }
-            if (countryId != countryUpdate.Id)
+            if (ownerId != ownerUpdate.Id)
             {
                 return BadRequest(ModelState);
             }
-            if (!_country.CountryExist(countryId))
+            if (!_ownerRepository.OwnerExist(ownerId))
             {
                 return NotFound();
             }
@@ -127,9 +136,9 @@ namespace PokemonReviewApp.Controllers
             {
                 return BadRequest();
             }
-            var countryMap = _mapper.Map<Country>(countryUpdate);
+            var ownerMap = _mapper.Map<Owner>(ownerUpdate);
 
-            if (!_country.UpdateCountry(countryMap))
+            if (!_ownerRepository.UpdateOwner(ownerMap))
             {
                 ModelState.AddModelError("", "Something went wrong updating category");
                 return StatusCode(500, ModelState);
@@ -139,32 +148,31 @@ namespace PokemonReviewApp.Controllers
 
         }
 
-        [HttpDelete("{countryId}")]
+        [HttpDelete("{ownerId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public IActionResult DeleteCountry(int countryId)
+        public IActionResult DeleteOwner(int ownerId)
         {
-            if (!_country.CountryExist(countryId))
+            if (!_ownerRepository.OwnerExist(ownerId))
             {
                 return NotFound();
             }
 
-            var countryToDelete = _country.GetCountry(countryId);
+            var ownerToDelete = _ownerRepository.GetOwner(ownerId);
 
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (!_country.DeleteCountry(countryToDelete))
+            if (!_ownerRepository.DeleteOwner(ownerToDelete))
             {
                 ModelState.AddModelError("", "Something went wrong deleteting category");
             }
 
             return NoContent();
         }
+
     }
-
 }
-

@@ -3,7 +3,8 @@ using PokemonReviewApp;
 using PokemonReviewApp.Data;
 using PokemonReviewApp.Interfaces;
 using PokemonReviewApp.Repository;
-using AutoMapper;
+using System.Text.Json.Serialization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,10 +12,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddTransient<Seed>();
+builder.Services.AddControllers().AddJsonOptions(x =>
+x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IPokemon,PokemonRepository>();
 builder.Services.AddScoped<ICategory,CategoryRepository>();
 builder.Services.AddScoped<ICountry,CountryRepositoy>();
+builder.Services.AddScoped<IOwner,OwnerRepository>();
+builder.Services.AddScoped<IReview, ReviewRepository>();
+builder.Services.AddScoped<IReviewer, ReviewerRepository>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

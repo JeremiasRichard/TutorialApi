@@ -8,6 +8,10 @@ namespace PokemonReviewApp.Interfaces
         public Category GetCategory(int Id);
         ICollection<Pokemon> GetPokemonByCategoryId(int categoryId);
         bool CategoryExist(int categoryId);
+        bool CreateCategory(Category category);
+        bool UpdateCategory(Category category);
+        bool DeleteCategory(Category category);
+        bool Save();
       
 
     }

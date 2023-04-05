@@ -9,9 +9,13 @@ namespace PokemonReviewApp.AutomapperProfile
 
         public MappingProfiles()
         {
-            CreateMap<Pokemon, PokemonDTO>();
-            CreateMap<Category, CategoryDTO>();
-            CreateMap<Country,CountryDTO>();
+            CreateMap<Pokemon, PokemonDTO>().ReverseMap();
+            CreateMap<Category, CategoryDTO>().ReverseMap();
+            CreateMap<Country,CountryDTO>().ReverseMap();
+            CreateMap<Owner, OwnerDTO>().ReverseMap();
+            CreateMap<Review, ReviewDTO>().ReverseMap();
+            CreateMap<Reviewer, ReviewerDTO>().ReverseMap();
+
         }
     }
 }
